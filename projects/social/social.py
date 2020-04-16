@@ -1,3 +1,6 @@
+from random import shuffle
+from collections import deque
+
 class User:
     def __init__(self, name):
         self.name = name
@@ -43,10 +46,20 @@ class SocialGraph:
         self.users = {}
         self.friendships = {}
         # !!!! IMPLEMENT ME
-
         # Add users
-
+        for user_id in range(1, num_users + 1):
+            self.add_user(f'user_{user_id}')
         # Create friendships
+        friendships = []
+        for user in range(1, self.last_id + 1):
+            for friend in range(user + 1, num_users):
+                friendships.append((user, friend))
+        shuffle(friendships)
+        total_friendships = num_users * avg_friendships
+        pairs_needed = total_friendships // 2
+        random_friendships = friendships[:pairs_needed]
+        for user_id, friend_id in random_friendships:
+            self.add_friendship(user_id, friend_id)
 
     def get_all_social_paths(self, user_id):
         """
@@ -59,12 +72,30 @@ class SocialGraph:
         """
         visited = {}  # Note that this is a dictionary, not a set
         # !!!! IMPLEMENT ME
+        queue = deque()
+        queue.append([user_id])
+        while len(queue) > 0:
+            current_path = queue.popleft()
+            current_user_id = current_path[-1]
+            
+            if current_user_id not in visited:
+                visited[current_user_id] = current_path
+                friend_ids = self.friendships[current_user_id]
+                for friend_id in friend_ids:
+                    queue.append(current_path + [friend_id])
+
         return visited
 
 
 if __name__ == '__main__':
     sg = SocialGraph()
-    sg.populate_graph(10, 2)
+    sg.populate_graph(1000, 5)
     print(sg.friendships)
     connections = sg.get_all_social_paths(1)
     print(connections)
+    percentage_of_users_in_network = len(connections) / len(sg.users) * 100
+    print(f"{percentage_of_users_in_network}% of users are in 1's network.")
+    total_degree_of_separation = 0
+    for connection in connections:
+        total_degree_of_separation += len(connections[connection]) - 1
+    print(f'Average degree of separation: {total_degree_of_separation / len(connections)}')
